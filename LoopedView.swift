@@ -10,8 +10,8 @@ import SwiftUI
 
 struct LoopedView<Content>: View where Content: View {
     @Binding var isRotating: Bool
+    @Binding var rotationsPerSecond: Double
     @State var initialAngle = 0.0
-    @State var rotationsPerSecond: Double = 1.0
     @ViewBuilder var content: () -> Content
     
     let timePublisher = Timer.publish(
@@ -24,10 +24,29 @@ struct LoopedView<Content>: View where Content: View {
         content()
             .rotationEffect(Angle(degrees: initialAngle))
             .onReceive(timePublisher, perform: { _ in
-                withAnimation(.linear(duration: 1.0)) {
-                    initialAngle += 36.0*rotationsPerSecond
+                if isRotating {
+                    withAnimation(.linear(duration: 1.0)) {
+                        initialAngle += 36.0*rotationsPerSecond
+                    }
+                    initialAngle = initialAngle.truncatingRemainder(dividingBy: 360.0)
                 }
-                initialAngle = initialAngle.truncatingRemainder(dividingBy: 360.0)
             })
+    }
+}
+
+struct ExampleView: View {
+    @State var isRotating = false
+    @State var rotationsPerSecond = 1.0
+    var body: some View {
+        VStack {
+            LoopedView(
+                isRotating: $isRotating,
+                rotationsPerSecond: $rotationsPerSecond
+            ) {
+                Text("The text being rotated with speed \(rotationsPerSecond)")
+            }
+            Slider(value: $rotationsPerSecond, in: 0.0...5.0)
+            Button("Stop rotating") { isRotating.toggle() }
+        }.padding()
     }
 }
